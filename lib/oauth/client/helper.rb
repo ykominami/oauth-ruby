@@ -12,7 +12,6 @@ module OAuth::Client
     def initialize(request, options = {})
       @request = request
       @options = options
-      @options[:signature_method] ||= 'HMAC-SHA1'
     end
 
     def options
@@ -30,7 +29,7 @@ module OAuth::Client
     def oauth_parameters
       {
         'oauth_consumer_key'     => options[:consumer].key,
-        'oauth_token'            => options[:token] ? options[:token].token : '',
+        'oauth_token'            => options[:token] && options[:token].token || '',
         'oauth_signature_method' => options[:signature_method],
         'oauth_timestamp'        => timestamp,
         'oauth_nonce'            => nonce,
@@ -39,16 +38,15 @@ module OAuth::Client
     end
 
     def signature(extra_options = {})
-      OAuth::Signature.sign(@request, { :uri      => options[:request_uri],
-                                        :consumer => options[:consumer],
-                                        :token    => options[:token] }.merge(extra_options) )
+      OAuth::Signature.sign(@request, parameters_for_signing(extra_options))
     end
 
     def signature_base_string(extra_options = {})
-      OAuth::Signature.signature_base_string(@request, { :uri        => options[:request_uri],
-                                                         :consumer   => options[:consumer],
-                                                         :token      => options[:token],
-                                                         :parameters => oauth_parameters}.merge(extra_options) )
+      OAuth::Signature.signature_base_string(@request, parameters_for_signing(extra_options))
+    end
+
+    def form_data
+      parameters_with_oauth.merge(:oauth_signature => signature)
     end
 
     def amend_user_agent_header(headers)
@@ -62,12 +60,22 @@ module OAuth::Client
 
     def header
       parameters = oauth_parameters
-      parameters.merge!('oauth_signature' => signature(options.merge(:parameters => parameters)))
+      parameters.merge!('oauth_signature' => signature)
 
       header_params_str = parameters.map { |k,v| "#{k}=\"#{escape(v)}\"" }.join(', ')
 
       realm = "realm=\"#{options[:realm]}\", " if options[:realm]
       "OAuth #{realm}#{header_params_str}"
+    end
+
+    def path(base_path)
+      oauth_params_str = oauth_parameters.map { |k,v| [escape(k), escape(v)] * "=" } * "&"
+
+      uri = URI.parse(base_path)
+      uri.query = [uri.query, oauth_params_str].compact * "&"
+      uri.query << "&oauth_signature=#{escape(signature)}"
+
+      uri.to_s
     end
 
     def parameters
@@ -76,6 +84,15 @@ module OAuth::Client
 
     def parameters_with_oauth
       oauth_parameters.merge(parameters)
+    end
+
+  protected
+
+    def parameters_for_signing(extra_parameters = {})
+      {
+        :uri        => options[:request_uri],
+        :parameters => oauth_parameters
+      }.merge(options).merge(extra_parameters)
     end
   end
 end
