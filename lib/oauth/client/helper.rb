@@ -5,79 +5,94 @@ require 'oauth/token'
 require 'oauth/version'
 require 'oauth/signature/hmac/sha1'
 
-module OAuth::Client
-  class Helper
-    include OAuth::Helper
+module OAuth
+  module Client
+    class Helper
+      attr_reader :options, :request
 
-    def initialize(request, options = {})
-      @request = request
-      @options = options
-      @options[:signature_method] ||= 'HMAC-SHA1'
-    end
-
-    def options
-      @options
-    end
-
-    def nonce
-      options[:nonce] ||= generate_key
-    end
-
-    def timestamp
-      options[:timestamp] ||= generate_timestamp
-    end
-
-    def oauth_parameters
-      {
-        'oauth_callback'         => options[:oauth_callback],
-        'oauth_consumer_key'     => options[:consumer].key,
-        'oauth_token'            => options[:token] ? options[:token].token : '',
-        'oauth_signature_method' => options[:signature_method],
-        'oauth_timestamp'        => timestamp,
-        'oauth_nonce'            => nonce,
-        'oauth_verifier'         => options[:oauth_verifier],
-        'oauth_version'          => '1.0'
-      }.reject { |k,v| v.to_s == "" }
-    end
-
-    def signature(extra_options = {})
-      OAuth::Signature.sign(@request, { :uri      => options[:request_uri],
-                                        :consumer => options[:consumer],
-                                        :token    => options[:token] }.merge(extra_options) )
-    end
-
-    def signature_base_string(extra_options = {})
-      OAuth::Signature.signature_base_string(@request, { :uri        => options[:request_uri],
-                                                         :consumer   => options[:consumer],
-                                                         :token      => options[:token],
-                                                         :parameters => oauth_parameters}.merge(extra_options) )
-    end
-
-    def amend_user_agent_header(headers)
-      @oauth_ua_string ||= "OAuth gem v#{OAuth::VERSION}"
-      if headers['User-Agent']
-        headers['User-Agent'] += " (#{@oauth_ua_string})"
-      else
-        headers['User-Agent'] = @oauth_ua_string
+      def initialize(request, options = {})
+        @request = request
+        @options = options
       end
-    end
 
-    def header
-      parameters = oauth_parameters
-      parameters.merge!('oauth_signature' => signature(options.merge(:parameters => parameters)))
+      def nonce
+        options[:nonce] ||= OAuth::Helper.generate_key
+      end
 
-      header_params_str = parameters.map { |k,v| "#{k}=\"#{escape(v)}\"" }.join(', ')
+      def timestamp
+        options[:timestamp] ||= OAuth::Helper.generate_timestamp
+      end
 
-      realm = "realm=\"#{options[:realm]}\", " if options[:realm]
-      "OAuth #{realm}#{header_params_str}"
-    end
+      def oauth_parameters
+        {
+          'oauth_consumer_key'     => options[:consumer].key,
+          'oauth_callback'         => options[:oauth_callback],
+          'oauth_token'            => options[:token] && options[:token].token || '',
+          'oauth_signature_method' => options[:signature_method],
+          'oauth_timestamp'        => timestamp,
+          'oauth_nonce'            => nonce,
+          'oauth_verifier'         => options[:oauth_verifier],
+          'oauth_version'          => '1.0'
+        }.reject { |k,v| v.to_s == "" }
+      end
 
-    def parameters
-      OAuth::RequestProxy.proxy(@request).parameters
-    end
+      def signature(extra_options = {})
+        OAuth::Signature.sign(request, parameters_for_signing(extra_options))
+      end
 
-    def parameters_with_oauth
-      oauth_parameters.merge(parameters)
+      def signature_base_string(extra_options = {})
+        OAuth::Signature.signature_base_string(request, parameters_for_signing(extra_options))
+      end
+
+      def form_data
+        parameters_with_oauth.merge(:oauth_signature => signature)
+      end
+
+      def amend_user_agent_header(headers)
+        @oauth_ua_string ||= "OAuth gem v#{OAuth::VERSION}"
+        if headers['User-Agent']
+          headers['User-Agent'] += " (#{@oauth_ua_string})"
+        else
+          headers['User-Agent'] = @oauth_ua_string
+        end
+      end
+
+      def header
+        parameters = oauth_parameters
+        parameters.merge!('oauth_signature' => signature)
+
+        header_params_str = parameters.map { |k,v| "#{k}=\"#{OAuth::Helper.escape(v)}\"" }.join(', ')
+
+        realm = "realm=\"#{options[:realm]}\", " if options[:realm]
+        "OAuth #{realm}#{header_params_str}"
+      end
+
+      def path
+        oauth_params_str = oauth_parameters.map { |k,v| [OAuth::Helper.escape(k), OAuth::Helper.escape(v)] * "=" } * "&"
+
+        uri = URI.parse(request.path)
+        uri.query = [uri.query, oauth_params_str].compact * "&"
+        uri.query << "&oauth_signature=#{OAuth::Helper.escape(signature)}"
+
+        uri.to_s
+      end
+
+      def parameters
+        OAuth::RequestProxy.proxy(request).parameters
+      end
+
+      def parameters_with_oauth
+        oauth_parameters.merge(parameters)
+      end
+
+    protected
+
+      def parameters_for_signing(extra_parameters = {})
+        {
+          :uri        => options[:request_uri],
+          :parameters => oauth_parameters
+        }.merge(options).merge(extra_parameters)
+      end
     end
   end
 end

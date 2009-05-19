@@ -51,8 +51,16 @@ script/destroy
 script/generate
 script/txt2html
 setup.rb
+spec/consumer_spec.rb
+spec/net_http_client_spec.rb
+spec/request_token_spec.rb
+spec/shared_consumer_examples.rb
+spec/shared_net_http_client_examples.rb
+spec/spec.opts
+spec/spec_helper.rb
 tasks/deployment.rake
 tasks/environment.rake
+tasks/rspec.rake
 tasks/website.rake
 test/cases/oauth_case.rb
 test/cases/spec/1_0-final/test_construct_request_url.rb
@@ -70,7 +78,6 @@ test/test_net_http_client.rb
 test/test_net_http_request_proxy.rb
 test/test_oauth_helper.rb
 test/test_rack_request_proxy.rb
-test/test_request_token.rb
 test/test_rsa_sha1.rb
 test/test_server.rb
 test/test_signature.rb

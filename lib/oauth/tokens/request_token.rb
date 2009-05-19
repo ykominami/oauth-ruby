@@ -15,8 +15,7 @@ module OAuth
 
     # exchange for AccessToken on server
     def get_access_token(options = {}, *arguments)
-      response = consumer.token_request(consumer.http_method, (consumer.access_token_url? ? consumer.access_token_url : consumer.access_token_path), self, options, *arguments)
-      OAuth::AccessToken.from_hash(consumer, response)
+      consumer.get_access_token(self, options, *arguments)
     end
 
   protected
@@ -24,8 +23,13 @@ module OAuth
     # construct an authorization url
     def build_authorize_url(base_url, params)
       uri = URI.parse(base_url.to_s)
-      # TODO doesn't handle array values correctly
-      uri.query = params.map { |k,v| [k, CGI.escape(v)] * "=" } * "&"
+
+      uri.query = params.map do |k,v|
+        v.collect do |val|
+          [k, CGI.escape(val)] * "="
+        end * "&"
+      end * "&"
+
       uri.to_s
     end
   end
