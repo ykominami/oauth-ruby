@@ -131,31 +131,74 @@ describe OAuth::Consumer do
         :secret => "request_token_secret"
     end
 
-    it "should get an OAuth::AccessToken" do
-      http = stub "Net::HTTP", \
-        :address => "example.com",
-        :port    => 80
+    describe "against a properly-functioning server" do
+      before :all do
+        @http = stub "Net::HTTP", \
+          :address => "example.com",
+          :port    => 80
 
-      http_request = stub "Net::HTTP::POST", \
-        :oauth! => true
+        @http_request = stub "Net::HTTP::POST", \
+          :oauth! => true
 
-      http_response = stub "Net::HTTPResponse", \
-        :body    => "oauth_token=access_token&oauth_token_secret=access_token_secret",
-        :code    => "200",
-        :to_hash => {}
+        @http_response = stub "Net::HTTPResponse", \
+          :body    => "oauth_token=access_token&oauth_token_secret=access_token_secret",
+          :code    => "200",
+          :to_hash => {}
+      end
 
-      @instance.expects(:create_http).with(nil).returns(http)
-      @instance.expects(:create_http_request).with(:post, OAuth::Consumer::DEFAULT_ACCESS_TOKEN_PATH).returns(http_request)
-      http.expects(:request).returns(http_response)
+      it "should get an OAuth::AccessToken" do
+        @instance.expects(:create_http).with(nil).returns(@http)
+        @instance.expects(:create_http_request).with(:post, OAuth::Consumer::DEFAULT_ACCESS_TOKEN_PATH).returns(@http_request)
+        @http.expects(:request).returns(@http_response)
 
-      access_token = @instance.get_access_token(@request_token)
-      access_token.should be_a_kind_of(OAuth::AccessToken)
-      access_token.token.should == "access_token"
-      access_token.secret.should == "access_token_secret"
+        access_token = @instance.get_access_token(@request_token)
+        access_token.should be_a_kind_of(OAuth::AccessToken)
+        access_token.token.should == "access_token"
+        access_token.secret.should == "access_token_secret"
+      end
+
+      it "should get an OAuth::AccessToken containing extra parameters" do
+        @http_response = stub "Net::HTTPResponse", \
+          :body    => "oauth_token=access_token_token&oauth_token_secret=access_token_secret&foo=bar",
+          :code    => "200",
+          :to_hash => {}
+
+        @instance.expects(:create_http).with(nil).returns(@http)
+        @instance.expects(:create_http_request).with(:post, OAuth::Consumer::DEFAULT_ACCESS_TOKEN_PATH).returns(@http_request)
+        @http.expects(:request).returns(@http_response)
+
+        access_token = @instance.get_access_token(@request_token)
+        access_token.params["foo"].should == "bar"
+      end
+
+      it "should include extra parameters when requesting a token" do
+        @http_response = stub "Net::HTTPResponse", \
+          :body    => "oauth_token=access_token&oauth_token_secret=access_token_secret",
+          :code    => "200",
+          :to_hash => {}
+
+        @instance.expects(:create_http).with(nil).returns(@http)
+
+        @http.expects(:request).with { |req|
+          req.body =~ /foo=bar/
+        }.returns(@http_response)
+
+        @instance.get_access_token(@request_token, {}, :foo => "bar")
+      end
+
+      describe "implementing 1.0a" do
+        it "should set `oauth_verifier`" do
+          oauth_verifier = "verifier"
+
+          @instance.expects(:create_http).with(nil).returns(@http)
+          @http.expects(:request).with { |req|
+            req.to_hash["authorization"][0] =~ /oauth_verifier="#{oauth_verifier}"/
+          }.returns(@http_response)
+
+          @instance.get_access_token(@request_token, :oauth_verifier => oauth_verifier)
+        end
+      end
     end
-
-    it "should get an OAuth::AccessToken containing extra parameters"
-    it "should include extra parameters when requesting a token"
   end
 
   describe "#get_request_token" do
@@ -166,29 +209,98 @@ describe OAuth::Consumer do
         :site => "http://example.com"
     end
 
-    it "should get an OAuth::RequestToken" do
-      http = stub_everything "Net::HTTP", \
-        :address       => "example.com",
-        :port          => 80
+    describe "against a properly-functioning server" do
+      before :all do
+        @http = stub_everything "Net::HTTP", \
+          :address       => "example.com",
+          :port          => 80
 
-      http_request = stub_everything("Net::HTTP::POST")
+        @http_request = stub "Net::HTTP::POST",
+          :[]=    => true,
+          :oauth! => true
 
-      http_response = stub "Net::HTTPResponse", \
-        :body    => "oauth_token=request_token&oauth_token_secret=request_token_secret",
-        :code    => "200",
-        :to_hash => {}
+        @http_response = stub "Net::HTTPResponse", \
+          :body    => "oauth_token=request_token&oauth_token_secret=request_token_secret",
+          :code    => "200",
+          :to_hash => {}
+      end
 
-      Net::HTTP.expects(:new).with("example.com", 80).returns(http)
-      Net::HTTP::Post.expects(:new).with(OAuth::Consumer::DEFAULT_REQUEST_TOKEN_PATH, {}).returns(http_request)
-      http.expects(:request).returns(http_response)
+      it "should get an OAuth::RequestToken" do
+        Net::HTTP.expects(:new).with("example.com", 80).returns(@http)
+        Net::HTTP::Post.expects(:new).with(OAuth::Consumer::DEFAULT_REQUEST_TOKEN_PATH, {}).returns(@http_request)
+        @http.expects(:request).returns(@http_response)
 
-      request_token = @instance.get_request_token
-      request_token.should be_a_kind_of(OAuth::RequestToken)
-      request_token.token.should == "request_token"
-      request_token.secret.should == "request_token_secret"
+        request_token = @instance.get_request_token
+        request_token.should be_a_kind_of(OAuth::RequestToken)
+        request_token.token.should == "request_token"
+        request_token.secret.should == "request_token_secret"
+      end
+
+      it "should get an OAuth::RequestToken containing extra parameters" do
+        @http_response = stub "Net::HTTPResponse", \
+          :body    => "oauth_token=request_token&oauth_token_secret=request_token_secret&foo=bar",
+          :code    => "200",
+          :to_hash => {}
+
+        Net::HTTP.expects(:new).with("example.com", 80).returns(@http)
+        Net::HTTP::Post.expects(:new).with(OAuth::Consumer::DEFAULT_REQUEST_TOKEN_PATH, {}).returns(@http_request)
+        @http.expects(:request).returns(@http_response)
+
+        request_token = @instance.get_request_token
+        request_token.params["foo"].should == "bar"
+      end
+
+      it "should include extra parameters when requesting a token" do
+        @http_response = stub "Net::HTTPResponse", \
+          :body    => "oauth_token=request_token&oauth_token_secret=request_token_secret",
+          :code    => "200",
+          :to_hash => {}
+
+        Net::HTTP.expects(:new).with("example.com", 80).returns(@http)
+        @http.expects(:request).with { |req|
+          req.body =~ /foo=bar/
+        }.returns(@http_response)
+
+        @instance.get_request_token({}, :foo => "bar")
+      end
+
+      describe "implementing 1.0a" do
+        before :all do
+          @http_response = stub "Net::HTTPResponse", \
+            :body    => "oauth_token=request_token&oauth_token_secret=request_token_secret&oauth_callback_confirmed=true",
+            :code    => "200",
+            :to_hash => {}
+        end
+
+        it "should get an OAuth::RequestToken with a confirmed callback" do
+          Net::HTTP.expects(:new).with("example.com", 80).returns(@http)
+          Net::HTTP::Post.expects(:new).with(OAuth::Consumer::DEFAULT_REQUEST_TOKEN_PATH, {}).returns(@http_request)
+          @http.expects(:request).returns(@http_response)
+
+          request_token = @instance.get_request_token
+          request_token.callback_confirmed?.should be_true
+        end
+
+        it "should set `oauth_callback`" do
+          oauth_callback = "http://example.org/cb"
+
+          Net::HTTP.expects(:new).with("example.com", 80).returns(@http)
+          @http.expects(:request).with { |req|
+            req.to_hash["authorization"][0] =~ /oauth_callback="#{CGI.escape(oauth_callback)}"/
+          }.returns(@http_response)
+
+          @instance.get_request_token(:oauth_callback => oauth_callback)
+        end
+
+        it "should set `oauth_callback` to 'oob' when absent" do
+          Net::HTTP.expects(:new).with("example.com", 80).returns(@http)
+          @http.expects(:request).with { |req|
+            req.to_hash["authorization"][0] =~ /oauth_callback="#{OAuth::OUT_OF_BAND}"/
+          }.returns(@http_response)
+
+          @instance.get_request_token
+        end
+      end
     end
-
-    it "should get an OAuth::RequestToken containing extra parameters"
-    it "should include extra parameters when requesting a token"
   end
 end
