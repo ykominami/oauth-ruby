@@ -77,6 +77,11 @@ module OAuth
           uri.to_s
         end
 
+        # Net::HTTPRequest doesn't provide write access to @path
+        def path=(path)
+          @path = path
+        end
+
         def set_oauth_header
           self['Authorization'] = oauth_helper.header
         end
