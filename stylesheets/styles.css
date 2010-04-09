@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Ruby OAuth</title>
+    <link rel="stylesheet" href="stylesheets/styles.css" type="text/css" media="screen" charset="utf-8"/>
+  </head>
+  <body>
+    <div id="container">
+      <div id="header">
+        <img src="images/oauth-ruby-logo.jpg" alt="Ruby OAuth Logo" id="logo" />
+        <h1>Ruby OAuth</h1>
+      </div>
+      <div id="main">
+        {{ content }}
+      </div>
+      <div id="footer">
+        <p>This site is <a href="http://github.com/oauth/oauth-ruby/tree/gh-pages">open source :)</a></p>
+      </div>
+    </div>
+  </body>
+</html>
+  
+
+
