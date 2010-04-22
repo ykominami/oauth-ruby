@@ -5,17 +5,12 @@ title: index
 
 h2. What
 
-This is a RubyGem for implementing both OAuth clients and servers in Ruby applications.
-
-See the "OAuth specs":http://oauth.net/core/1.0/
+A ruby gem implementing both "OAuth":http://oauth.net clients (consumers) and servers (providers) in Ruby applications.
 
 h2. Installing
 
 <pre syntax="ruby">sudo gem install oauth</pre>
 
-You can also install it from the "oauth rubyforge project":http://rubyforge.org/projects/oauth/.
-
-The source code is now hosted on the "OAuth GitHub Project":http://github.com/pelle/oauth/tree/master
 
 h2. The basics
 
