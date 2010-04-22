@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Ruby OAuth</title>
+    <link rel="stylesheet" href="stylesheets/styles.css" type="text/css" media="screen" charset="utf-8"/>
+    <link rel="stylesheet" href="stylesheets/syntax.css" type="text/css" media="screen" charset="utf-8"/>
+  </head>
+  <body>
+    <a href="http://github.com/oauth/oauth-ruby"><img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub" /></a>
+    <div id="container">
+      <div id="header">
+        <img src="images/oauth-ruby-logo.jpg" alt="Ruby OAuth Logo" id="logo" />
+        <h1>Ruby OAuth</h1>
+      </div>
+      <div id="main">
+        <h2>What</h2>
+<p>A set of Ruby tools for implementing both <a href="http://oauth.net">OAuth</a> clients (consumers) and servers (providers). The tools are based off the <a href="http://oauth.net/core/1.0a/">OAuth 1.0a Specification.</a></p>
+<h2>Installing</h2>
+<div class="highlight"><pre><code class="bash">sudo gem install oauth
+</code></pre>
+</div><h2>What is OAuth?</h2>
+<p>OAuth is a protocol for authorization of protected resources for use by a &#8216;consumer&#8217; from a &#8216;provider&#8217;. The basic use case is for allowing one web service to access a users protected data on another service without sharing their credentials with both sites.</p>
+<p>Here are some resources for learning more about the protocol itself:</p>
+<ul>
+	<li><a href="http://hueniverse.com/oauth/">Beginners Guide to OAuth</a></li>
+	<li><a href="http://hueniverse.com/oauth/guide/">The Authoritative Guide</a></li>
+	<li><a href="http://apiwiki.twitter.com/OAuth-FAQ">Twitter&#8217;s OAuth <span class="caps">FAQ</span></a></li>
+</ul>
+<h2>Usage</h2>
+<p>The OAuth Ruby gem strives to follow the specification as closely as possible. Terminology and conventions are taken from the spec.</p>
+<p>To create a consuming application, first create a consumer object:</p>
+<div class="highlight"><pre><code class="ruby"><span class="vi">@consumer</span> <span class="o">=</span> <span class="no">OAuth</span><span class="o">::</span><span class="no">Consumer</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;key&#39;</span><span class="p">,</span> <span class="s1">&#39;secret&#39;</span><span class="p">,</span> <span class="p">{</span><span class="ss">:site</span> <span class="o">=&gt;</span> <span class="s1">&#39;https://twitter.com&#39;</span><span class="p">})</span>
+</code></pre>
+</div><p>To start the authorization process, create a request token with the <code>consumer</code>. Here in a Rails action, we store the token in a session cookie and then redirect the user to an authorization url where they can approve access to their data.</p>
+<div class="highlight"><pre><code class="ruby"><span class="vi">@request_token</span> <span class="o">=</span> <span class="vi">@consumer</span><span class="o">.</span><span class="n">get_request_token</span>
+<span class="n">session</span><span class="o">[</span><span class="ss">:request_token</span><span class="o">]</span> <span class="o">=</span> <span class="vi">@request_token</span>
+<span class="n">redirect_to</span> <span class="vi">@request_token</span><span class="o">.</span><span class="n">authorize_url</span>
+</code></pre>
+</div><p>If successful, the provider will redirect to the &#8216;callback <span class="caps">URL</span>&#8217; we&#8217;ve defined, and then we can request an access token:</p>
+<div class="highlight"><pre><code class="ruby"><span class="vi">@access_token</span> <span class="o">=</span> <span class="vi">@request_token</span><span class="o">.</span><span class="n">get_access_token</span>
+</code></pre>
+</div><p>We can store this access token or use it immediately to request data from the provider:</p>
+<div class="highlight"><pre><code class="ruby"><span class="vi">@photos</span> <span class="o">=</span> <span class="vi">@access_token</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;/photos.xml&#39;</span><span class="p">)</span>
+</code></pre>
+</div><p>For full <span class="caps">API</span> level documentation, Check out the <a href="http://rdoc.info/projects/oauth/oauth-ruby">latest RDoc hosted at rdoc.info</a></p>
+<p>Also check out:</p>
+<ul>
+	<li><a href="http://stakeventures.com/articles/2008/02/23/developing-oauth-clients-in-ruby">OAuth Client Tutorial</a></li>
+	<li><a href="http://www.rubyinside.com/twitter-oauth-ruby-rails-sinatra-1665.html">OAuth Twitter Apps on RubyInside</a></li>
+</ul>
+<h2>License</h2>
+<p>This code is free to use under the terms of the <span class="caps">MIT</span> license.</p>
+<h2>Questions/Issues/Comments?</h2>
+<p>The full source code and history are hosted on github:</p>
+<p><a href="http://github.com/oauth/oauth-ruby">http://github.com/oauth/oauth-ruby</a></p>
+<p>Forks and pull requests are welcome, but please supply tests and detailed commit messages.</p>
+<p>For help, questions, anything else check out the <a href="http://groups.google.com/group/oauth-ruby">Google Group/Mailing List at http://groups.google.com/group/oauth-ruby</a></p>
+      </div>
+      <div id="footer">
+        <p>This site is <a href="http://github.com/oauth/oauth-ruby/tree/gh-pages">open source :)</a></p>
+      </div>
+    </div>
+  </body>
+</html>
+  
+
+

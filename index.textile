@@ -5,67 +5,72 @@ title: index
 
 h2. What
 
-A ruby gem implementing both "OAuth":http://oauth.net clients (consumers) and servers (providers) in Ruby applications.
+A set of Ruby tools for implementing both "OAuth":http://oauth.net clients (consumers) and servers (providers). The tools are based off the "OAuth 1.0a Specification.":http://oauth.net/core/1.0a/
 
 h2. Installing
 
-<pre syntax="ruby">sudo gem install oauth</pre>
+{% highlight bash %}
+sudo gem install oauth
+{% endhighlight %}
+
+h2. What is OAuth?
+
+OAuth is a protocol for authorization of protected resources for use by a 'consumer' from a 'provider'. The basic use case is for allowing one web service to access a users protected data on another service without sharing their credentials with both sites.
+
+Here are some resources for learning more about the protocol itself:
+
+* "Beginners Guide to OAuth":http://hueniverse.com/oauth/
+* "The Authoritative Guide":http://hueniverse.com/oauth/guide/
+* "Twitter's OAuth FAQ":http://apiwiki.twitter.com/OAuth-FAQ
 
 
-h2. The basics
+h2. Usage
 
-This is a ruby library which is intended to be used in creating Ruby Consumer and Service Provider applications. It is NOT a Rails plugin, but could easily be used for the foundation for such a Rails plugin.
+The OAuth Ruby gem strives to follow the specification as closely as possible. Terminology and conventions are taken from the spec.
 
-As a matter of fact it has been pulled out from an "OAuth Rails Plugin":http://code.google.com/p/oauth-plugin/ which now requires this GEM.
+To create a consuming application, first create a consumer object:
 
-h2. Demonstration of usage
+{% highlight ruby %}
+@consumer = OAuth::Consumer.new('key', 'secret', {:site => 'https://twitter.com'})
+{% endhighlight %}
 
-Create a new consumer instance by passing it a configuration hash:
+To start the authorization process, create a request token with the @consumer@. Here in a Rails action, we store the token in a session cookie and then redirect the user to an authorization url where they can approve access to their data.
 
-<pre><code>@consumer=OAuth::Consumer.new( "key","secret", {
-    :site=>"https://agree2"
-    })</code></pre>
+{% highlight ruby %}
+@request_token = @consumer.get_request_token
+session[:request_token] = @request_token
+redirect_to @request_token.authorize_url
+{% endhighlight %}
 
-Start the process by requesting a token
+If successful, the provider will redirect to the 'callback URL' we've defined, and then we can request an access token:
 
-<pre><code>@request_token=@consumer.get_request_token
-session[:request_token]=@request_token
-redirect_to @request_token.authorize_url</code></pre>
+{% highlight ruby %}
+@access_token = @request_token.get_access_token
+{% endhighlight %}
 
-When user returns create an access_token
+We can store this access token or use it immediately to request data from the provider:
 
-<pre><code>@access_token=@request_token.get_access_token
-@photos=@access_token.get('/photos.xml')</code></pre>
+{% highlight ruby %}
+@photos = @access_token.get('/photos.xml')
+{% endhighlight %}
 
-For more detailed instructions I have written this "OAuth Client Tutorial":http://stakeventures.com/articles/2008/02/23/developing-oauth-clients-in-ruby and "How to turn your rails site into an OAuth Provider ":http://stakeventures.com/articles/2007/11/26/how-to-turn-your-rails-site-into-an-oauth-provider.
+For full API level documentation, Check out the "latest RDoc hosted at rdoc.info":http://rdoc.info/projects/oauth/oauth-ruby
 
-Finally be sure to check out the "OAuth RDoc Manual":http://oauth.rubyforge.org/rdoc/.
+Also check out:
 
-h2. Documentation Wiki
-
-There is some documentation on the Google Code project for the "OAuth Rails Plugin":http://code.google.com/p/oauth-plugin/ :
-
-* "RequestToken":http://code.google.com/p/oauth-plugin/wiki/RequestToken
-* "AccessToken":http://code.google.com/p/oauth-plugin/wiki/AccessToken
-
-h2. Forum
-
-"http://groups.google.com/group/oauth-ruby":http://groups.google.com/group/oauth-ruby
-
-
-h2. How to submit patches
-
-Read the "8 steps for fixing other people's code":http://drnicwilliams.com/2007/06/01/8-steps-for-fixing-other-peoples-code/.
-
-The source code is now hosted on the "OAuth GitHub Project":http://github.com/pelle/oauth/tree/master
-
-To submit a patch, please fork the oauth project and create a patch with tests. Once you're happy with it send a pull request and post a message to the google group.
+* "OAuth Client Tutorial":http://stakeventures.com/articles/2008/02/23/developing-oauth-clients-in-ruby 
+* "OAuth Twitter Apps on RubyInside":http://www.rubyinside.com/twitter-oauth-ruby-rails-sinatra-1665.html
 
 h2. License
 
 This code is free to use under the terms of the MIT license. 
 
-h2. Contact
+h2. Questions/Issues/Comments?
 
-Comments are welcome. Send an email to "Pelle Braendgaard":mailto:pelleb@gmail.com email via the "OAuth Ruby mailing list":http://groups.google.com/group/oauth-ruby
+The full source code and history are hosted on github:
 
+"http://github.com/oauth/oauth-ruby":http://github.com/oauth/oauth-ruby
+
+Forks and pull requests are welcome, but please supply tests and detailed commit messages. 
+
+For help, questions, anything else check out the "Google Group/Mailing List at http://groups.google.com/group/oauth-ruby":http://groups.google.com/group/oauth-ruby
