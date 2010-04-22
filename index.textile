@@ -60,6 +60,8 @@ Also check out:
 
 * "OAuth Client Tutorial":http://stakeventures.com/articles/2008/02/23/developing-oauth-clients-in-ruby 
 * "OAuth Twitter Apps on RubyInside":http://www.rubyinside.com/twitter-oauth-ruby-rails-sinatra-1665.html
+* "An example of using OAuth with EventMachine":http://github.com/igrigorik/em-http-request/blob/master/examples/oauth-tweet.rb
+* "WardenOAuth":http://github.com/roman/warden_oauth
 
 h2. License
 
